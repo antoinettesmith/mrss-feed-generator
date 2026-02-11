@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/feed"
+  to = "/.netlify/functions/feed"
+  status = 200
+  force = true

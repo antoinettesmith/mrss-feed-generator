@@ -1,0 +1,14 @@
+{
+  "name": "mrss-feed-generator",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MRSS feed URL generator with YouTube API backend for extended video counts",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0"
+  }
+}

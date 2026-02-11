@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MRSS Feed URL Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #18181d;
+      --surface-hover: #1f1f26;
+      --border: #2a2a32;
+      --text: #e8e8ed;
+      --text-muted: #8b8b98;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --success: #22c55e;
+      --warning: #eab308;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card h2 .badge {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 0.2em 0.5em;
+      border-radius: 4px;
+      background: var(--accent);
+      color: white;
+    }
+
+    .card h2 .badge.third-party {
+      background: var(--warning);
+      color: var(--bg);
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin: 0 0 1rem;
+    }
+
+    .notice {
+      background: rgba(234, 179, 8, 0.12);
+      border: 1px solid rgba(234, 179, 8, 0.35);
+      border-radius: 6px;
+      padding: 0.65rem 0.9rem;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .notice strong {
+      color: inherit;
+    }
+
+    .label-optional {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.85em;
+    }
+
+    .output-label {
+      margin-top: 1rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .output-sublabel {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.9em;
+    }
+
+    .extended-section {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .extended-desc {
+      margin-bottom: 0.5rem !important;
+      font-size: 0.8rem !important;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.9rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text-muted);
+      opacity: 0.7;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+
+    .output-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+      margin-top: 0.75rem;
+    }
+
+    .output-row input {
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.65rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+
+    .feed-url {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.8rem;
+      word-break: break-all;
+      color: var(--success);
+    }
+
+    .help-list {
+      margin: 0;
+      padding-left: 1.25rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .help-list li {
+      margin-bottom: 0.35rem;
+    }
+
+    .help-list a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .help-list a:hover {
+      text-decoration: underline;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .tabs button {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+    }
+
+    .tabs button.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .tabs button:not(.active):hover {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>MRSS Feed URL Generator</h1>
+      <p class="subtitle">Generate Media RSS feed URLs for YouTube channels and playlists</p>
+    </header>
+
+    <!-- YouTube -->
+    <section class="card">
+      <h2>YouTube <span class="badge">Direct</span></h2>
+      <p>YouTube provides official RSS/Atom feeds. Paste a channel ID (starts with <code>UC</code>) or playlist ID.</p>
+      <p class="notice"><strong>Note:</strong> The official feed only includes the <strong>15 most recent videos</strong>. For more videos, use the API-backed feed below.</p>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="channel" aria-selected="true">Channel ID</button>
+        <button type="button" class="tab" data-tab="playlist">Playlist ID</button>
+      </div>
+
+      <div id="panel-channel" class="tab-panel active">
+        <label for="yt-channel">Channel ID</label>
+        <input type="text" id="yt-channel" placeholder="e.g. UCX6OQ3DkcsbYNE6H8uQQuVA" />
+      </div>
+      <div id="panel-playlist" class="tab-panel">
+        <label for="yt-playlist">Playlist ID</label>
+        <input type="text" id="yt-playlist" placeholder="e.g. PLrAXtmErZgOeiKm4sgNOknGvNjby9efdfg" />
+      </div>
+
+      <label class="output-label">Official feed <span class="output-sublabel">(15 most recent videos)</span></label>
+      <div class="output-row">
+        <input type="text" id="yt-output" readonly placeholder="Your MRSS feed URL will appear here" />
+        <button type="button" class="btn-primary" id="yt-copy">Copy</button>
+      </div>
+
+      <div class="extended-section" id="yt-api-section">
+        <label class="output-label">API-backed feed <span class="output-sublabel">(up to 2000 videos)</span></label>
+        <p class="extended-desc">Uses the YouTube Data API via this app's Node server. Run <code>npm start</code> and set <code>YOUTUBE_API_KEY</code> in <code>youtube.env</code>.</p>
+        <div class="output-row">
+          <input type="text" id="yt-api-output" readonly placeholder="Enter Channel ID above" />
+          <button type="button" class="btn-primary" id="yt-api-copy">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      YouTube feeds use <code>https://www.youtube.com/feeds/videos.xml</code>. API-backed feed uses YouTube Data API v3.
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      const YT_BASE = "https://www.youtube.com/feeds/videos.xml";
+
+      // YouTube tabs
+      const tabs = document.querySelectorAll(".tab");
+      const panels = document.querySelectorAll(".tab-panel");
+      const ytChannel = document.getElementById("yt-channel");
+      const ytPlaylist = document.getElementById("yt-playlist");
+      const ytOutput = document.getElementById("yt-output");
+      const ytCopy = document.getElementById("yt-copy");
+      const ytApiOutput = document.getElementById("yt-api-output");
+      const ytApiCopy = document.getElementById("yt-api-copy");
+      const ytApiSection = document.getElementById("yt-api-section");
+
+      function getApiBaseUrl() {
+        if (typeof window !== "undefined" && window.location.origin && !window.location.origin.startsWith("file")) {
+          return window.location.origin;
+        }
+        return "http://localhost:3000";
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          const tabName = tab.getAttribute("data-tab");
+          tabs.forEach(function (t) {
+            t.classList.toggle("active", t === tab);
+            t.setAttribute("aria-selected", t === tab ? "true" : "false");
+          });
+          panels.forEach(function (panel) {
+            panel.classList.toggle("active", panel.id === "panel-" + tabName);
+          });
+          updateYtOutput();
+          updateYtApiOutput();
+        });
+      });
+
+      function getYtFeedUrl() {
+        const channel = (ytChannel.value || "").trim();
+        const playlist = (ytPlaylist.value || "").trim();
+        const activeTab = document.querySelector(".tab.active");
+        const kind = activeTab ? activeTab.getAttribute("data-tab") : "channel";
+
+        if (kind === "channel" && channel) {
+          return YT_BASE + "?channel_id=" + encodeURIComponent(channel);
+        }
+        if (kind === "playlist" && playlist) {
+          return YT_BASE + "?playlist_id=" + encodeURIComponent(playlist);
+        }
+        return "";
+      }
+
+      function getYtApiFeedUrl() {
+        const activeTab = document.querySelector(".tab.active");
+        if (!activeTab || activeTab.getAttribute("data-tab") !== "channel") return "";
+        const channel = (ytChannel.value || "").trim();
+        if (!channel) return "";
+        const base = getApiBaseUrl();
+        return base + "/feed?channel_id=" + encodeURIComponent(channel) + "&max=2000";
+      }
+
+      function updateYtOutput() {
+        ytOutput.value = getYtFeedUrl();
+      }
+
+      function updateYtApiOutput() {
+        const url = getYtApiFeedUrl();
+        ytApiOutput.value = url;
+        ytApiSection.style.display = document.querySelector(".tab.active").getAttribute("data-tab") === "channel" ? "block" : "none";
+      }
+
+      [ytChannel, ytPlaylist].forEach(function (input) {
+        input.addEventListener("input", function () {
+          updateYtOutput();
+          if (input === ytChannel) updateYtApiOutput();
+        });
+      });
+
+      ytCopy.addEventListener("click", function () {
+        const url = getYtFeedUrl();
+        if (!url) return;
+        copyWithFeedback(url, ytCopy);
+      });
+
+      ytApiCopy.addEventListener("click", function () {
+        const url = getYtApiFeedUrl();
+        if (!url) return;
+        copyWithFeedback(url, ytApiCopy);
+      });
+
+      function copyWithFeedback(text, button) {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          var label = button.textContent;
+          button.textContent = "Copied!";
+          setTimeout(function () {
+            button.textContent = label;
+          }, 1500);
+        });
+      }
+
+      // Initial outputs
+      updateYtOutput();
+      updateYtApiOutput();
+    })();
+  </script>
+</body>
+</html>
