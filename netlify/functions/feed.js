@@ -1,39 +1,63 @@
-const DEFAULT_MAX = 1000;
+const DEFAULT_MAX = 15; // YouTube's public feed returns up to 15 videos
 
-async function getChannelInfo(channelId, apiKey) {
-  const url = new URL('https://www.googleapis.com/youtube/v3/channels');
-  url.searchParams.set('part', 'contentDetails,snippet');
-  url.searchParams.set('id', channelId);
-  url.searchParams.set('key', apiKey);
+const YOUTUBE_FEED_URL = 'https://www.youtube.com/feeds/videos.xml';
+
+async function fetchAtomFeed(channelId) {
+  const url = `${YOUTUBE_FEED_URL}?channel_id=${channelId}`;
   const res = await fetch(url);
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || `channels.list failed: ${res.status}`);
-  const item = data.items?.[0];
-  if (!item) throw new Error('Channel not found');
-  return {
-    uploadsPlaylistId: item.contentDetails.relatedPlaylists.uploads,
-    channelTitle: item.snippet.title,
-    channelDescription: item.snippet.description || '',
-  };
+  if (!res.ok) {
+    throw new Error(`Failed to fetch feed: ${res.status}`);
+  }
+  return res.text();
 }
 
-async function getPlaylistItems(playlistId, maxItems, apiKey) {
+function extractTag(xml, tagName, ns = '') {
+  const prefix = ns ? `${ns}:` : '';
+  const pattern = new RegExp(`<${prefix}${tagName}[^>]*>([\\s\\S]*?)<\\/${prefix}${tagName}>`, 'i');
+  const match = xml.match(pattern);
+  return match ? match[1].trim().replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1') : '';
+}
+
+function extractAttr(xml, tagName, attr) {
+  const pattern = new RegExp(`<${tagName}[^>]*${attr}=["']([^"']+)["']`, 'i');
+  const match = xml.match(pattern);
+  return match ? match[1] : '';
+}
+
+function parseAtomFeed(xml, maxItems) {
+  const channelTitle = extractTag(xml, 'title');
+  const channelDescription = extractTag(xml, 'subtitle') || '';
+
+  const entryRegex = /<entry>([\s\S]*?)<\/entry>/gi;
   const items = [];
-  let pageToken;
-  do {
-    const url = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
-    url.searchParams.set('part', 'snippet,contentDetails');
-    url.searchParams.set('playlistId', playlistId);
-    url.searchParams.set('maxResults', '50');
-    if (pageToken) url.searchParams.set('pageToken', pageToken);
-    url.searchParams.set('key', apiKey);
-    const res = await fetch(url);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || `playlistItems.list failed: ${res.status}`);
-    items.push(...(data.items || []));
-    pageToken = data.nextPageToken;
-  } while (pageToken && items.length < maxItems);
-  return items.slice(0, maxItems);
+  let match;
+  while ((match = entryRegex.exec(xml)) !== null && items.length < maxItems) {
+    const entry = match[1];
+    const videoId = extractTag(entry, 'videoId', 'yt') || (extractAttr(entry, 'link', 'href') || '').split('v=')[1]?.split('&')[0];
+    if (!videoId) continue;
+
+    const title = extractTag(entry, 'title');
+    const link = extractAttr(entry, 'link', 'href') || `https://www.youtube.com/watch?v=${videoId}`;
+    const published = extractTag(entry, 'published');
+    const description = extractTag(entry, 'description', 'media') || '';
+
+    const thumbMatch = entry.match(/<media:thumbnail[^>]*url=["']([^"']+)["'][^>]*(?:width=["']([^"']*)["'])?[^>]*(?:height=["']([^"']*)["'])?/i);
+    const thumb = thumbMatch
+      ? { url: thumbMatch[1], width: thumbMatch[2] || '', height: thumbMatch[3] || '' }
+      : null;
+
+    items.push({
+      snippet: {
+        title,
+        description,
+        publishedAt: published,
+        resourceId: { videoId },
+        thumbnails: thumb ? { high: thumb, medium: thumb, default: thumb } : {},
+      },
+    });
+  }
+
+  return { channelTitle, channelDescription, items };
 }
 
 function escapeXml(str = '') {
@@ -56,31 +80,34 @@ function buildMrss({ channelId, channelTitle, channelDescription, items }) {
       const pubDate = new Date(sn.publishedAt).toUTCString();
       const thumb = sn.thumbnails?.high || sn.thumbnails?.medium || sn.thumbnails?.default;
       const thumbXml = thumb ? `\n      <media:thumbnail url="${escapeXml(thumb.url)}" width="${thumb.width || ''}" height="${thumb.height || ''}" />` : '';
-      return `\n    <item>\n      <title>${escapeXml(sn.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid isPermaLink="true">${escapeXml(link)}</guid>\n      <pubDate>${pubDate}</pubDate>\n      <description>${escapeXml(sn.description || '')}</description>\n      <enclosure url="${escapeXml(link)}" type="video/youtube" />\n      <media:group>\n      <media:content url="${escapeXml(link)}" type="video/youtube" />${thumbXml}\n      </media:group>\n    </item>`;
+      return `\n    <item>\n      <title>${escapeXml(sn.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid isPermaLink="true">${escapeXml(link)}</guid>\n      <pubDate>${pubDate}</pubDate>\n      <description>${escapeXml(sn.description || '')}</description>\n      <enclosure url="${escapeXml(link)}" type="video/youtube" length="0" />\n      <media:group>\n      <media:content url="${escapeXml(link)}" medium="video" type="video/youtube" />${thumbXml}\n      </media:group>\n    </item>`;
     })
     .join('');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">\n  <channel>\n    <title>${escapeXml(channelTitle)}</title>\n    <link>${escapeXml(channelLink)}</link>\n    <description>${escapeXml(channelDescription)}</description>${itemXml}\n  </channel>\n</rss>`;
 }
 
-async function generateFeed({ channelId, max, apiKey }) {
-  const cappedMax = Math.min(parseInt(max, 10) || DEFAULT_MAX, 1000);
-  const { uploadsPlaylistId, channelTitle, channelDescription } = await getChannelInfo(channelId, apiKey);
-  const items = await getPlaylistItems(uploadsPlaylistId, cappedMax, apiKey);
-  return buildMrss({ channelId, channelTitle, channelDescription, items });
+async function generateFeed({ channelId, max }) {
+  const cappedMax = Math.min(parseInt(max, 10) || DEFAULT_MAX, 15);
+  const xml = await fetchAtomFeed(channelId);
+  const { channelTitle, channelDescription, items } = parseAtomFeed(xml, cappedMax);
+
+  if (!channelTitle) {
+    throw new Error('Channel not found');
+  }
+
+  return buildMrss({
+    channelId,
+    channelTitle,
+    channelDescription,
+    items,
+  });
 }
 
 exports.handler = async function (event) {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'text/plain' },
-      body: 'YOUTUBE_API_KEY is not configured. Add it in your Netlify site environment variables.',
-    };
-  }
   const params = event.queryStringParameters || {};
   const channelId = params.channel_id?.trim();
   const max = params.max;
+
   if (!channelId) {
     return {
       statusCode: 400,
@@ -88,8 +115,9 @@ exports.handler = async function (event) {
       body: 'Missing channel_id. Use ?channel_id=UCxxxx',
     };
   }
+
   try {
-    const xml = await generateFeed({ channelId, max, apiKey });
+    const xml = await generateFeed({ channelId, max });
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/rss+xml; charset=utf-8' },
