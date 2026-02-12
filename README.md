@@ -1,79 +1,27 @@
 # MRSS Feed URL Generator
 
-A simple web app that generates **MRSS (Media RSS) feed URLs** from a YouTube channel ID or playlist ID. Includes a Node.js backend and serverless functions that use the YouTube Data API to serve feeds with **up to 1000 videos**.
+A simple web app that generates **MRSS (Media RSS) feed URLs** from a YouTube channel ID or playlist ID.
 
 ## Features
 
-- **YouTube** – Two feed options:
-  - **Official feed** – `https://www.youtube.com/feeds/videos.xml?channel_id=...` (15 most recent videos only)
-  - **API-backed feed** – Up to **1000 videos** via the Node server or serverless (Vercel/Netlify)
+- **YouTube** – Generate the official feed URL: `https://www.youtube.com/feeds/videos.xml?channel_id=...` or `?playlist_id=...`
+- **15 most recent videos** – The official YouTube feed includes the 15 most recent videos for a channel or playlist
 
-## Quick start (frontend only)
+## Quick start
 
-Open `index.html` in a browser or serve the folder with any static server. No build step required for the official feed.
-
----
-
-## Deploy to Vercel or Netlify
-
-### 1. Get a YouTube API key
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project or select an existing one
-3. Enable **YouTube Data API v3** (APIs & Services → Library)
-4. Create credentials → **API key**
-5. **API restrictions:** Choose "Restrict key" and select **YouTube Data API v3** only
-6. **Application restrictions:** Use **None** — Vercel and Netlify run on dynamic IPs, so IP restriction is not practical for serverless. Restricting the key to YouTube Data API v3 is sufficient.
-7. Copy the API key
-
-### 2. Deploy
-
-**Vercel**
-
-1. Push your code to GitHub and [import the repo in Vercel](https://vercel.com/new)
-2. Add environment variable: `YOUTUBE_API_KEY` = your API key
-3. Deploy
-
-**Netlify**
-
-1. Push your code to GitHub and [add the site in Netlify](https://app.netlify.com/start)
-2. Set the publish directory to `.` (or leave default)
-3. Add environment variable: `YOUTUBE_API_KEY` = your API key
-4. Deploy
-
-### 3. Feed URL after deploy
-
-```
-https://your-app.vercel.app/feed?channel_id=UCxxxxx&max=1000
-```
-or
-```
-https://your-app.netlify.app/feed?channel_id=UCxxxxx&max=1000
-```
-
-- `channel_id` (required) – YouTube channel ID
-- `max` (optional) – Max videos to include (default: 1000, capped at 1000)
-
----
-
-## Local development
+Open `index.html` in a browser or serve the folder with any static server. No build step required.
 
 ```bash
-cd "MRSS Feed"
-cp youtube.env.example youtube.env
-# Edit youtube.env and add your YOUTUBE_API_KEY
+# Option 1: Open directly
+open index.html
 
-npm install
-npm start
+# Option 2: Serve with a static server
+npx serve .
 ```
 
-The server runs at `http://localhost:3000`. The **API-backed feed** output will use `http://localhost:3000/feed?channel_id=...`.
+## Deploy
 
----
-
-## API quota
-
-YouTube Data API has a daily quota (default 10,000 units). Each feed request costs roughly 1 + ceil(videos/50) units (e.g. ~21 for 1000 videos). For heavy use, request a quota increase in Google Cloud Console.
+Deploy the folder to any static host (Netlify, Vercel, GitHub Pages, etc.). No environment variables or build step required—the app uses YouTube's public feed URLs.
 
 ## Finding a YouTube channel ID
 
