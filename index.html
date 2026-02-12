@@ -316,7 +316,7 @@
       </div>
 
       <div class="extended-section" id="yt-api-section">
-        <label class="output-label">API-backed feed <span class="output-sublabel">(up to 2000 videos)</span></label>
+        <label class="output-label">API-backed feed <span class="output-sublabel">(up to 1000 videos)</span></label>
         <p class="extended-desc">Uses the YouTube Data API via this app's Node server. Run <code>npm start</code> and set <code>YOUTUBE_API_KEY</code> in <code>youtube.env</code>.</p>
         <div class="output-row">
           <input type="text" id="yt-api-output" readonly placeholder="Enter Channel ID above" />
@@ -388,7 +388,7 @@
         const channel = (ytChannel.value || "").trim();
         if (!channel) return "";
         const base = getApiBaseUrl();
-        return base + "/feed?channel_id=" + encodeURIComponent(channel) + "&max=2000";
+        return base + "/feed?channel_id=" + encodeURIComponent(channel) + "&max=1000";
       }
 
       function updateYtOutput() {
