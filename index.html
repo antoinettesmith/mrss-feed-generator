@@ -293,7 +293,7 @@
     <section class="card">
       <h2>YouTube <span class="badge">Direct</span></h2>
       <p>YouTube provides official RSS/Atom feeds. Paste a channel ID (starts with <code>UC</code>) or playlist ID.</p>
-      <p class="notice"><strong>Note:</strong> The official feed only includes the <strong>15 most recent videos</strong>. For more videos, use the API-backed feed below.</p>
+      <p class="notice"><strong>Note:</strong> The official feed only includes the <strong>15 most recent videos</strong>.</p>
 
       <div class="tabs" role="tablist">
         <button type="button" class="tab active" data-tab="channel" aria-selected="true">Channel ID</button>
@@ -315,18 +315,10 @@
         <button type="button" class="btn-primary" id="yt-copy">Copy</button>
       </div>
 
-      <div class="extended-section" id="yt-api-section">
-        <label class="output-label">API-backed feed <span class="output-sublabel">(up to 1000 videos)</span></label>
-        <p class="extended-desc">Uses the YouTube Data API via this app's Node server. Run <code>npm start</code> and set <code>YOUTUBE_API_KEY</code> in <code>youtube.env</code>.</p>
-        <div class="output-row">
-          <input type="text" id="yt-api-output" readonly placeholder="Enter Channel ID above" />
-          <button type="button" class="btn-primary" id="yt-api-copy">Copy</button>
-        </div>
-      </div>
     </section>
 
     <footer>
-      YouTube feeds use <code>https://www.youtube.com/feeds/videos.xml</code>. API-backed feed uses YouTube Data API v3.
+      YouTube feeds use <code>https://www.youtube.com/feeds/videos.xml</code>.
     </footer>
   </div>
 
@@ -341,16 +333,6 @@
       const ytPlaylist = document.getElementById("yt-playlist");
       const ytOutput = document.getElementById("yt-output");
       const ytCopy = document.getElementById("yt-copy");
-      const ytApiOutput = document.getElementById("yt-api-output");
-      const ytApiCopy = document.getElementById("yt-api-copy");
-      const ytApiSection = document.getElementById("yt-api-section");
-
-      function getApiBaseUrl() {
-        if (typeof window !== "undefined" && window.location.origin && !window.location.origin.startsWith("file")) {
-          return window.location.origin;
-        }
-        return "http://localhost:3000";
-      }
 
       tabs.forEach(function (tab) {
         tab.addEventListener("click", function () {
@@ -363,7 +345,6 @@
             panel.classList.toggle("active", panel.id === "panel-" + tabName);
           });
           updateYtOutput();
-          updateYtApiOutput();
         });
       });
 
@@ -382,42 +363,18 @@
         return "";
       }
 
-      function getYtApiFeedUrl() {
-        const activeTab = document.querySelector(".tab.active");
-        if (!activeTab || activeTab.getAttribute("data-tab") !== "channel") return "";
-        const channel = (ytChannel.value || "").trim();
-        if (!channel) return "";
-        const base = getApiBaseUrl();
-        return base + "/feed?channel_id=" + encodeURIComponent(channel) + "&max=1000";
-      }
-
       function updateYtOutput() {
         ytOutput.value = getYtFeedUrl();
       }
 
-      function updateYtApiOutput() {
-        const url = getYtApiFeedUrl();
-        ytApiOutput.value = url;
-        ytApiSection.style.display = document.querySelector(".tab.active").getAttribute("data-tab") === "channel" ? "block" : "none";
-      }
-
       [ytChannel, ytPlaylist].forEach(function (input) {
-        input.addEventListener("input", function () {
-          updateYtOutput();
-          if (input === ytChannel) updateYtApiOutput();
-        });
+        input.addEventListener("input", updateYtOutput);
       });
 
       ytCopy.addEventListener("click", function () {
         const url = getYtFeedUrl();
         if (!url) return;
         copyWithFeedback(url, ytCopy);
-      });
-
-      ytApiCopy.addEventListener("click", function () {
-        const url = getYtApiFeedUrl();
-        if (!url) return;
-        copyWithFeedback(url, ytApiCopy);
       });
 
       function copyWithFeedback(text, button) {
@@ -433,7 +390,6 @@
 
       // Initial outputs
       updateYtOutput();
-      updateYtApiOutput();
     })();
   </script>
 </body>
