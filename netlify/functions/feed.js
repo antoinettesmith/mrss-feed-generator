@@ -1,4 +1,4 @@
-const DEFAULT_MAX = 2000;
+const DEFAULT_MAX = 1000;
 
 async function getChannelInfo(channelId, apiKey) {
   const url = new URL('https://www.googleapis.com/youtube/v3/channels');
@@ -55,14 +55,15 @@ function buildMrss({ channelId, channelTitle, channelDescription, items }) {
       const link = `https://www.youtube.com/watch?v=${vid}`;
       const pubDate = new Date(sn.publishedAt).toUTCString();
       const thumb = sn.thumbnails?.high || sn.thumbnails?.medium || sn.thumbnails?.default;
-      return `\n    <item>\n      <title>${escapeXml(sn.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid isPermaLink="true">${escapeXml(link)}</guid>\n      <pubDate>${pubDate}</pubDate>\n      <description>${escapeXml(sn.description || '')}</description>${thumb ? `\n      <media:thumbnail url="${escapeXml(thumb.url)}" width="${thumb.width || ''}" height="${thumb.height || ''}" />` : ''}\n    </item>`;
+      const thumbXml = thumb ? `\n      <media:thumbnail url="${escapeXml(thumb.url)}" width="${thumb.width || ''}" height="${thumb.height || ''}" />` : '';
+      return `\n    <item>\n      <title>${escapeXml(sn.title)}</title>\n      <link>${escapeXml(link)}</link>\n      <guid isPermaLink="true">${escapeXml(link)}</guid>\n      <pubDate>${pubDate}</pubDate>\n      <description>${escapeXml(sn.description || '')}</description>\n      <enclosure url="${escapeXml(link)}" type="video/youtube" />\n      <media:group>\n      <media:content url="${escapeXml(link)}" type="video/youtube" />${thumbXml}\n      </media:group>\n    </item>`;
     })
     .join('');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">\n  <channel>\n    <title>${escapeXml(channelTitle)}</title>\n    <link>${escapeXml(channelLink)}</link>\n    <description>${escapeXml(channelDescription)}</description>${itemXml}\n  </channel>\n</rss>`;
 }
 
 async function generateFeed({ channelId, max, apiKey }) {
-  const cappedMax = Math.min(parseInt(max, 10) || DEFAULT_MAX, 2000);
+  const cappedMax = Math.min(parseInt(max, 10) || DEFAULT_MAX, 1000);
   const { uploadsPlaylistId, channelTitle, channelDescription } = await getChannelInfo(channelId, apiKey);
   const items = await getPlaylistItems(uploadsPlaylistId, cappedMax, apiKey);
   return buildMrss({ channelId, channelTitle, channelDescription, items });
