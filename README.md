@@ -1,12 +1,12 @@
 # MRSS Feed URL Generator
 
-A simple web app that generates **MRSS (Media RSS) feed URLs** from a YouTube channel ID or playlist ID. Includes a Node.js backend and serverless functions that use the YouTube Data API to serve feeds with **up to 2000 videos**.
+A simple web app that generates **MRSS (Media RSS) feed URLs** from a YouTube channel ID or playlist ID. Includes a Node.js backend and serverless functions that use the YouTube Data API to serve feeds with **up to 1000 videos**.
 
 ## Features
 
 - **YouTube** – Two feed options:
   - **Official feed** – `https://www.youtube.com/feeds/videos.xml?channel_id=...` (15 most recent videos only)
-  - **API-backed feed** – Up to **2000 videos** via the Node server or serverless (Vercel/Netlify)
+  - **API-backed feed** – Up to **1000 videos** via the Node server or serverless (Vercel/Netlify)
 
 ## Quick start (frontend only)
 
@@ -44,15 +44,15 @@ Open `index.html` in a browser or serve the folder with any static server. No bu
 ### 3. Feed URL after deploy
 
 ```
-https://your-app.vercel.app/feed?channel_id=UCxxxxx&max=2000
+https://your-app.vercel.app/feed?channel_id=UCxxxxx&max=1000
 ```
 or
 ```
-https://your-app.netlify.app/feed?channel_id=UCxxxxx&max=2000
+https://your-app.netlify.app/feed?channel_id=UCxxxxx&max=1000
 ```
 
 - `channel_id` (required) – YouTube channel ID
-- `max` (optional) – Max videos to include (default: 2000, capped at 2000)
+- `max` (optional) – Max videos to include (default: 1000, capped at 1000)
 
 ---
 
@@ -73,7 +73,7 @@ The server runs at `http://localhost:3000`. The **API-backed feed** output will 
 
 ## API quota
 
-YouTube Data API has a daily quota (default 10,000 units). Each feed request costs roughly 1 + ceil(videos/50) units (e.g. ~41 for 2000 videos). For heavy use, request a quota increase in Google Cloud Console.
+YouTube Data API has a daily quota (default 10,000 units). Each feed request costs roughly 1 + ceil(videos/50) units (e.g. ~21 for 1000 videos). For heavy use, request a quota increase in Google Cloud Console.
 
 ## Finding a YouTube channel ID
 
